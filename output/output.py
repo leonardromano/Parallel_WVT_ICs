@@ -7,13 +7,12 @@ Created on Mon Jan  4 14:54:12 2021
 """
 import h5py
 from numpy import zeros
-import ray
 from time import time
 
 from Parameters.parameter import output, Npart, NDIM
 
 
-def write_output(Particles_ref, Problem):
+def write_output(Particles, Problem):
     "writes all the particle data in a hdf5 file."
     t0 = time()
     
@@ -24,6 +23,7 @@ def write_output(Particles_ref, Problem):
     h_att.create("NumPart", Npart)
     h_att.create("Mpart", Problem.Mpart)
     h_att.create("Boxsize", Problem.Boxsize)
+    h_att.create("Periodic", Problem.Periodic)
     h_att.create("NDIM", NDIM)
     #now make the data sets for the particle data
     IDs        = zeros((Npart), dtype = int)
@@ -33,7 +33,6 @@ def write_output(Particles_ref, Problem):
     hsml       = zeros((Npart), dtype = float)
     pressures  = zeros((Npart), dtype = float)
     entropies  = zeros((Npart), dtype = float)
-    Particles = ray.get(Particles_ref)
     for i in range(Npart):
         IDs[i]        += Particles[i].ID
         positions[i]  += Particles[i].position * Problem.FacIntToCoord

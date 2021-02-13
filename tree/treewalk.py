@@ -5,12 +5,11 @@ Created on Sun Jan  3 13:29:49 2021
 
 @author: leonard
 """
-from numpy import zeros, asarray, minimum, maximum, copy
+from numpy import zeros, ones, asarray, minimum, maximum, copy
 from math import ceil
 import ray
 from sys import exit
 
-from data.structures import particles
 from Parameters.constants import DESNNGB, NNGBDEV, NORM_COEFF, NCPU, \
     MIN_LOAD_PER_CORE, MAX_INT
 from Parameters.parameter import NDIM, Npart
@@ -22,38 +21,37 @@ from utility.utility import norm
 #Parallel functions & classes
 
 @ray.remote(num_cpus=1)
-class workstack():
-    def __init__(self, particles_ref, ID, load):
-        if ID < NCPU-1:
-            self.particles = particles_ref[ID * load:(ID+1) * load]
-        else:
-            self.particles = particles_ref[ID * load:]
-    
-    def process(self, NgbTree, Left, Right):
-        "this function does the heavy lifting for the parallelization"
-        Lower = copy(Left)
-        Upper = copy(Right)
-        done = list()
-        work_left = list()
-        for particle in self.particles:
-            i = particle.ID
-            #do some postprocessing on density
-            finish_density_update(particle, NgbTree)
-            numNgb = NORM_COEFF * particle.Hsml**(NDIM) * particle.Rho / NgbTree.Mpart
-            if (abs(numNgb-DESNNGB)>NNGBDEV):    
-                #check whether we're done
-                if Left[i] > 0 and Right[i] > 0 and Right[i]-Left[i] < 1e-3 * Left[i]:
-                    #this one should be ok
-                    done.append(particle)
-                    continue
-                #need to redo this one
-                Lower[i], Upper[i] = update_bounds(Lower[i], Upper[i], numNgb, \
-                                              particle.Hsml)
-                update_smoothing_length(Lower[i], Upper[i], particle)
-                work_left.append(particle)
-            else:
+def process_treewalk(Particles, NgbTree):
+    "this function does the heavy lifting for the parallelization"
+    for particle in Particles:
+        walk_tree(particle, NgbTree)
+    return Particles
+
+@ray.remote(num_cpus=1)
+def process_finalize(Particles, NgbTree, Left, Right):
+    "this function does the heavy lifting for the parallelization"
+    Lower = copy(Left)
+    Upper = copy(Right)
+    done = list()
+    work_left = list()
+    for particle in Particles:
+        i = particle.ID
+        #do some postprocessing on density
+        finish_density_update(particle, NgbTree)
+        numNgb = NORM_COEFF * particle.Hsml**(NDIM) * particle.Rho / NgbTree.Mpart
+        if abs(numNgb-DESNNGB) <= NNGBDEV:
+            done.append(particle)
+        else:    
+            if Left[i] > 0 and Right[i] < 1e30 and Right[i]-Left[i] < 1e-3 * Left[i]:
+                #this one should be ok
                 done.append(particle)
-        return done, work_left, Lower, Upper
+                continue
+            #need to redo this one
+            Lower[i], Upper[i] = update_bounds(Lower[i], Upper[i], numNgb, \
+                                              particle.Hsml)
+            update_smoothing_length(Lower[i], Upper[i], particle)
+            work_left.append(particle)
+    return done, work_left, Lower, Upper
     
 def get_optimal_load(total_load):
     "Divide the load in as many reasonably big chunks as possible"
@@ -145,7 +143,7 @@ def sph_density_interact(particle, no, no_type, NgbTree):
         if evaluate_particle_node_opening_criterion(particle, node, NgbTree):
             sph_density_open_node(particle, node, NgbTree)
 
-def densities_determine(NgbTree_ref, Workstack_ref, npleft):
+def densities_determine(NgbTree_ref, Workstack, npleft):
     """
     for each target walk the tree to determine the neighbors and then 
     compute density and thermodynamic quantities
@@ -155,46 +153,47 @@ def densities_determine(NgbTree_ref, Workstack_ref, npleft):
     
     if ncpu > 1:
         #split work evenly among processes
-        actors = [particles.remote(Workstack_ref, i, load) for i in range(ncpu)]
-    
-        result = [actor.process.remote(walk_tree, NgbTree_ref) for actor in actors]
+        result = [process_treewalk.remote(Workstack[i * load:(i+1) * load], \
+                                          NgbTree_ref) for i in range(ncpu-1)]
+        result.append(process_treewalk.remote(Workstack[(ncpu-1) * load:], \
+                                              NgbTree_ref))
     
         Worklist = list()
         while len(result):
             done_id, result = ray.wait(result)
             Worklist += ray.get(done_id[0])
-        Workstack = asarray(Worklist)
+        Workstack = Worklist
     else:
-        #do the remaining work locally
         NgbTree = ray.get(NgbTree_ref)
-        Workstack = ray.get(Workstack_ref)
+        #do the remaining work locally
         for particle in Workstack:
             walk_tree(particle, NgbTree)
-    return ray.put(Workstack)
+            
+    return Workstack
         
 ###############################################################################
 #main loop
 
-def density(Workstack_ref, NgbTree_ref):
+def density(Workstack, NgbTree_ref):
     "For each particle compute density, smoothing length and thermodynamic variables"
-    Left = asarray([0.0 for _ in range(Npart)])
-    Right = asarray([0.0 for _ in range(Npart)])
+    Left = zeros(Npart)
+    Right = ones(Npart) * 1e30
     Donestack = list()
     npleft = Npart
     niter = 0
     while True:
         # now do the primary work with this call
-        Workstack_ref = densities_determine(NgbTree_ref, Workstack_ref, npleft)
+        Workstack = densities_determine(NgbTree_ref, Workstack, npleft)
         # do final operations on results
-        Donestack, Workstack_ref, \
-        Left, Right, npleft = do_final_operations(NgbTree_ref, Workstack_ref, \
+        Donestack, Workstack, \
+        Left, Right, npleft = do_final_operations(NgbTree_ref, Workstack, \
                                                   Donestack, Left, Right, \
                                                   npleft)
         niter += 1
         if npleft <= 0:
             break
     print("DENSITY: Finished after %d iterations."%niter)
-    return ray.put(asarray(Donestack))
+    return Donestack
 
 ###############################################################################
 #Bisection algorithm related functions
@@ -204,7 +203,7 @@ def update_bounds(lowerBound, upperBound, numNgb, h):
     if numNgb < DESNNGB - NNGBDEV:
         lowerBound = max(lowerBound, h)
     else:
-        if upperBound != 0:
+        if upperBound != 1e30:
             upperBound = min(h, upperBound)
         else:
             upperBound = h
@@ -212,17 +211,17 @@ def update_bounds(lowerBound, upperBound, numNgb, h):
 
 def update_smoothing_length(lowerBound, upperBound, particle):
     "Perform the bisection part of the bisection algorithm"
-    if lowerBound > 0 and upperBound > 0:
+    if lowerBound > 0 and upperBound < 1e30:
         particle.Hsml = ((lowerBound**3 + upperBound**3)/2)**(1/3)
     else:
-        if upperBound == 0 and lowerBound == 0:
+        if upperBound == 1e30 and lowerBound == 0:
             print("Upper and Lower bounds not updated!")
             exit()
             
-        if upperBound == 0 and lowerBound > 0:
+        if upperBound == 1e30 and lowerBound > 0:
             particle.Hsml *= 1.26
                     
-        if upperBound > 0 and lowerBound  == 0:
+        if upperBound < 1e30 and lowerBound  == 0:
             particle.Hsml /= 1.26
 
 ###############################################################################
@@ -265,37 +264,40 @@ def get_minimum_distance_from_wall(particle, NgbTree):
 ###############################################################################
 #density calculation
 
-def do_final_operations(NgbTree_ref, Workstack_ref, Donestack, \
-                        Left, Right, npleft):
+def do_final_operations(NgbTree_ref, Workstack, Donestack, Left, Right, npleft):
     "Postprocessing and check if done"
     load, ncpu = get_optimal_load(npleft)
     
     if ncpu > 1:
         #split work evenly among processes
-        actors = [workstack.remote(Workstack_ref, i, load) for i in range(ncpu)]
+        result = [process_finalize.remote(Workstack[i * load:(i+1) * load], \
+                                          NgbTree_ref, Left, Right) \
+                  for i in range(ncpu-1)]
+        result.append(process_finalize.remote(Workstack[(ncpu-1) * load:], \
+                                              NgbTree_ref, Left, Right))
     
-        result = [actor.process.remote(NgbTree_ref, Left, Right) for actor in actors]
-    
-        Workstack = list()
+        Worklist = list()
         while len(result):
             done_id, result = ray.wait(result)
             done, work, left, right = ray.get(done_id[0])
-            Workstack += work
+            Worklist += work
             Donestack += done
             Left = maximum(Left, left)
             Right = minimum(Right, right)
     else:
         #do the remaining work locally
         NgbTree = ray.get(NgbTree_ref)
-        Workstack = list()
-        for particle in ray.get(Workstack_ref):
+        Worklist = list()
+        for particle in Workstack:
             i = particle.ID
             #do some postprocessing on density
             finish_density_update(particle, NgbTree)
             numNgb = NORM_COEFF * particle.Hsml**(NDIM) * particle.Rho / NgbTree.Mpart
-            if (abs(numNgb-DESNNGB)>NNGBDEV):    
+            if abs(numNgb-DESNNGB) <= NNGBDEV:
+                Donestack.append(particle)
+            else:   
                 #check whether we're done
-                if Left[i] > 0 and Right[i] > 0 and Right[i]-Left[i] < 1e-3 * Left[i]:
+                if Left[i] > 0 and Right[i] < 1e30 and Right[i]-Left[i] < 1e-3 * Left[i]:
                     #this one should be ok
                     Donestack.append(particle)
                     continue
@@ -303,13 +305,10 @@ def do_final_operations(NgbTree_ref, Workstack_ref, Donestack, \
                 Left[i], Right[i] = update_bounds(Left[i], Right[i], numNgb, \
                                               particle.Hsml)
                 update_smoothing_length(Left[i], Right[i], particle)
-                Workstack.append(particle)
-            else:
-                Donestack.append(particle)
-    npleft = len(Workstack)
-    return Donestack, ray.put(asarray(Workstack)), Left, Right, npleft
-    
-    
+                Worklist.append(particle)
+                
+    npleft = len(Worklist)
+    return Donestack, Worklist, Left, Right, npleft        
 
 def evaluate_kernel(particle, NgbTree):
     "Perform the neighbor sum to compute density and SPH correction factor"

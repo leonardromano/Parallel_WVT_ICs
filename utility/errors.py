@@ -32,10 +32,9 @@ def get_errors(Particles):
 ###############################################################################
 
 
-def compute_l1_error(Particles_ref, Problem):
+def compute_l1_error(Particles, Problem):
     t0 = time()
     
-    Particles = ray.get(Particles_ref)
     #split work evenly among processes
     pending = [get_errors.remote(Particles[i * Load: (i+1) * Load]) \
                for i in range(NCPU-1)]
@@ -58,5 +57,4 @@ def compute_l1_error(Particles_ref, Problem):
     
     t1 = time()
     Problem.Timer["L1-ERROR"] += t1-t0
-    del Particles
     return err_min, err_max, err_mean, err_sigma

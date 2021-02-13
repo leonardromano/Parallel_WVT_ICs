@@ -6,7 +6,6 @@ Created on Sun Jan  3 12:50:23 2021
 @author: leonard
 """
 from numpy import ones, zeros, empty
-import ray
 from time import time
 from sys import exit
 
@@ -36,11 +35,11 @@ class ngbnode():
 
 class ngbtree():
     "A neighbor search tree"
-    def __init__(self, particles_ref, Problem):
+    def __init__(self, particles, Problem):
         #List of particles
         t0 = time()
         
-        self.Tp            = ray.get(particles_ref)
+        self.Tp            = particles
         self.Mpart         = Problem.Mpart
         self.FacIntToCoord = Problem.FacIntToCoord
         self.Boxsize       = Problem.Boxsize

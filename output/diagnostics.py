@@ -7,7 +7,6 @@ Created on Mon Jan  4 12:43:29 2021
 """
 import h5py
 from numpy import zeros
-import ray
 from time import time
 
 from Parameters.parameter import output, Npart, NDIM
@@ -23,7 +22,7 @@ def write_diagnostics(niter, err_diff, move_Mps, err_quad):
                %(niter, *err_quad, err_diff, *move_Mps))
     file.close()
 
-def write_step_file(Particles_ref, Problem, niter):
+def write_step_file(Particles, Problem, niter):
     "writes all the particle data in a hdf5 file."
     t0 = time()
     
@@ -41,8 +40,6 @@ def write_step_file(Particles_ref, Problem, niter):
     velocities = zeros((Npart, NDIM), dtype = float)
     densities  = zeros((Npart), dtype = float)
     hsml       = zeros((Npart), dtype = float)
-    
-    Particles = ray.get(Particles_ref)
     for i in range(Npart):
         IDs[i]        += Particles[i].ID
         positions[i]  += Particles[i].position * Problem.FacIntToCoord

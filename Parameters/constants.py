@@ -6,7 +6,6 @@ Created on Sun Jan  3 12:25:26 2021
 @author: leonard
 """
 from numpy import pi
-#from numpy.random import seed
 from psutil import cpu_count
 from  os import environ
 

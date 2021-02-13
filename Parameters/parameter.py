@@ -11,11 +11,11 @@ Created on Sat Jan  2 14:56:12 2021
 #General parameters
 ####################################################################
 #output directory
-output   = "../ICs/WVT_ICs/" 
+output   = "/home/t30/all/ga87reg/Num_seminar/ICs/"  
 #Number of particles
-Npart   = 400
+Npart   = 2000
 #Name of scheduling system
-Scheduler = "local"
+Scheduler = "SGE"
 #save a snapshot after each step
 SAVE_WVT_STEPS = True
 ####################################################################
@@ -35,7 +35,7 @@ LimitMps100 = -1
 #convergence limit for even smaller steps
 LimitMps1000 = 1
 #Maximum number of iterations
-Maxiter = 30
+Maxiter = 100
 #####################################################################
 
 #Redistribution parameters

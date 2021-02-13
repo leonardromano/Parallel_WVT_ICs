@@ -18,19 +18,19 @@ from wvt.relax import regularise_particles
 
 def main():
     "Set up a box with SPH particles, then WVT relax the particles"
+    #turn of all running instances of ray to avoid interference with our task
     ray.shutdown()
     ray.init(num_cpus = NCPU)
+    print("Starting IC-making using %d cores..."%NCPU)
     t0 = time()
-    Particles_ref, Problem, Functions = setup()
+    Particles, Problem, Functions = setup()
     #sample position and set model density
-    Particles_ref = sample(Particles_ref, Problem, \
-                           [Functions.Position_func, Functions.Density_func])
+    Particles = sample(Particles, Problem, [Functions.Position_func, Functions.Density_func])
     #do the WVT regularisation loop
-    Particles_ref = regularise_particles(Particles_ref, Problem, Functions.Density_func)
+    Particles = regularise_particles(Particles, Problem, Functions.Density_func)
     #now set the velocity and entropy for each particle
-    Particles_ref = sample(Particles_ref, Problem, \
-                           [Functions.Velocity_func, Functions.Entropy_func])
-    write_output(Particles_ref, Problem)
+    Particles = sample(Particles, Problem, [Functions.Velocity_func, Functions.Entropy_func])
+    write_output(Particles, Problem)
     t1 = time()
     T = t1 - t0
     print("Successfully created ICs! Took %g seconds.\n"%T)

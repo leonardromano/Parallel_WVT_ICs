@@ -5,8 +5,6 @@ Created on Sat Jan  2 15:11:14 2021
 
 @author: leonard
 """
-from numpy import asarray
-import ray
 from sys import exit
 
 from data.structures import particle_data, problem, functions
@@ -16,14 +14,14 @@ import init.problems as problems
 def setup():
     "Initialize list of particles, problem and determine particle mass"
     #first make a list of all particles
-    Particles_ref = ray.put(asarray([particle_data(i) for i in range(Npart)]))
+    Particles = [particle_data(i) for i in range(Npart)]
     Prob, Funcs = setup_problem()
     print("Problem %s\n"%(Prob.name) + \
           "   Npart: %d \n"%Npart + \
           "   Mpart: %g \n"%Prob.Mpart + \
           "   Boxsize:" + str(Prob.Boxsize) + "\n" + \
           "   Periodic:" + str(Prob.Periodic) + "\n\n")
-    return Particles_ref, Prob, Funcs
+    return Particles, Prob, Funcs
     
 def setup_problem():
     "Initialize problem and functions"

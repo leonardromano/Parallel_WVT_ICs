@@ -18,7 +18,7 @@ from sph.sph import find_sph_quantities
 from tree.tree import ngbtree
 from utility.utility import relative_density_error_with_sign
 
-def redistribute(Particles_ref, Problem, NgbTree_ref, density_func, niter):
+def redistribute(Particles, Problem, density_func, niter):
     "If we have specified this timestep for redistribution redistribute"
     t0 = time()
         
@@ -26,23 +26,21 @@ def redistribute(Particles_ref, Problem, NgbTree_ref, density_func, niter):
     moveFraction = MoveFractionMax * exp(-decay * (niter / RedistributionFrequency - 1))
     movePart = int(Npart * moveFraction)
     maxProbes = int(Npart * ProbesFraction * moveFraction / MoveFractionMax)
-    Particles_ref = redistribute_particles(movePart, maxProbes, Particles_ref, \
-                                           Problem, density_func)
+    redistribute_particles(movePart, maxProbes, Particles, Problem, density_func)
         
     t1 = time()
     Problem.Timer["REDIST"] += t1-t0
     #Now redo the SPH-neighbor-search
-    NgbTree_ref = ray.put(ngbtree(Particles_ref, Problem))
-    Particles_ref = find_sph_quantities(Particles_ref, NgbTree_ref, Problem)
-    return Particles_ref, NgbTree_ref
+    NgbTree_ref = ray.put(ngbtree(Particles, Problem))
+    Particles = find_sph_quantities(Particles, NgbTree_ref, Problem)
+    return Particles, NgbTree_ref
 
-def redistribute_particles(movePart, maxProbes, Particles_ref, Problem, density_func):
+def redistribute_particles(movePart, maxProbes, Particles, Problem, density_func):
     "Take random high density particles and put them in low density regions"
     print("Attempting to redistribute %d particles by probing %d"\
           %(movePart, maxProbes))
     redistCounter = 0
     probeCounter  = 0
-    Particles = ray.get(Particles_ref)
     for i in range(movePart):
         if probeCounter < maxProbes:
             part_i, success_flag, probeCounter = \
@@ -57,7 +55,6 @@ def redistribute_particles(movePart, maxProbes, Particles_ref, Problem, density_
                 redistCounter +=1
     print("Redistributed %d particles after probing %d particles\n"\
           %(redistCounter, probeCounter))
-    return ray.put(Particles)
     
 def find_particle_to_redistribute(probeCounter, maxProbes, Particles):
     "Pick random particles until we find a high density particles"

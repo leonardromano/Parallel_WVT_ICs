@@ -6,27 +6,9 @@ Created on Sat Jan  2 15:12:04 2021
 @author: leonard
 """
 from numpy import zeros, ones
-from numpy.random import seed
-import ray
 
-from Parameters.constants import BITS_FOR_POSITIONS, NCPU
+from Parameters.constants import BITS_FOR_POSITIONS
 from Parameters.parameter import NDIM
-
-@ray.remote(num_cpus=1)
-class particles():
-    def __init__(self, particles_ref, ID, load):
-        if ID < NCPU-1:
-            self.particles = particles_ref[ID * load:(ID+1) * load]
-        else:
-            self.particles = particles_ref[ID * load:]
-        seed(69 + 420 * ID)
-    
-    def process(self, func, *args):
-        "this function does the heavy lifting for the parallelization"
-        for particle in self.particles:
-            func(particle, *args)
-        return [*self.particles]
-
 
 #A data structure for particles
 class particle_data():
