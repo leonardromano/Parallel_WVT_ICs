@@ -25,6 +25,10 @@ def relative_density_error_with_sign(particle):
 def relative_density_error(particle):
     return abs(relative_density_error_with_sign(particle))
 
+def sign(particle):
+    eps = relative_density_error_with_sign(particle)
+    return eps/max(abs(eps), 1e-15)
+
 def norm(vector):
     r = 0
     for component in vector:

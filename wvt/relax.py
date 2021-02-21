@@ -24,7 +24,7 @@ from Parameters.parameter import Npart, NDIM, Maxiter, MpsFraction, \
     StepReduction, LimitMps, LimitMps10, LimitMps100, LimitMps1000, \
     LastMoveStep, RedistributionFrequency, SAVE_WVT_STEPS
 from sph.sph import initial_guess_hsml, find_sph_quantities
-from tree.tree import ngbtree
+from tree.tree import ngbtree, update_Tp
 from utility.errors import compute_l1_error
 from wvt.drift import drift_particles
 from wvt.forces import compute_wvt_forces
@@ -70,6 +70,9 @@ def regularise_particles(Particles, Problem, density_func):
         print("#%02d: Err min=%3g max=%3g mean=%03g sigma=%03g diff=%03g step=%g\n"\
               %(niter, err_min, err_max, err_mean, err_sigma, err_diff, step))
         err_last  = err_mean
+        
+        #update the particles referenced by the neighbor tree
+        NgbTree_ref = update_Tp(Particles, NgbTree_ref, Problem)
         
         #now compute the forces
         Particles = compute_wvt_forces(Particles, Problem, NgbTree_ref, step)

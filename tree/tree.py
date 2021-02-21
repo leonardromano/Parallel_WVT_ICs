@@ -6,12 +6,34 @@ Created on Sun Jan  3 12:50:23 2021
 @author: leonard
 """
 from numpy import ones, zeros, empty
-from time import time
+import ray
 from sys import exit
+from time import time
 
 from Parameters.constants import BITS_FOR_POSITIONS, MAX_INT, \
                                  TREE_NUM_BEFORE_NODESPLIT
 from Parameters.parameter import NDIM, Npart
+
+class treepoint():
+    "reduced particle data for tree applications"
+    def __init__(self, particle):
+        self.position  = particle.position
+        self.Hsml      = particle.Hsml
+        self.Rho       = particle.Rho
+        self.Rho_Model = particle.Rho_Model
+
+def update_Tp(particles, NgbTree_ref, Problem):
+    t0 = time()
+    #first make sure the particles are in order
+    Tp_new = { particle.index: treepoint(particle) for particle in particles}
+    #now update NgbTree.Tp
+    NgbTree = ray.get(NgbTree_ref)
+    NgbTree.Tp = Tp_new
+    NgbTree_ref = ray.put(NgbTree)
+
+    t1 = time()
+    Problem.Timer["TREE"] += t1-t0
+    return NgbTree_ref
 
 class ngbnode():
     "A structure for node data"
@@ -39,7 +61,7 @@ class ngbtree():
         #List of particles
         t0 = time()
         
-        self.Tp            = particles
+        self.Tp            = { particle.index: treepoint(particle) for particle in particles}
         self.Mpart         = Problem.Mpart
         self.FacIntToCoord = Problem.FacIntToCoord
         self.Boxsize       = Problem.Boxsize
