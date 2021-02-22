@@ -17,6 +17,7 @@ from Parameters.parameter import NDIM, Npart
 class treepoint():
     "reduced particle data for tree applications"
     def __init__(self, particle):
+        self.ID        = particle.ID
         self.position  = particle.position
         self.Hsml      = particle.Hsml
         self.Rho       = particle.Rho
