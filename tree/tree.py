@@ -25,7 +25,7 @@ class treepoint():
 def update_Tp(particles, NgbTree_ref, Problem):
     t0 = time()
     #first make sure the particles are in order
-    Tp_new = { particle.index: treepoint(particle) for particle in particles}
+    Tp_new = { particle.ID: treepoint(particle) for particle in particles}
     #now update NgbTree.Tp
     NgbTree = ray.get(NgbTree_ref)
     NgbTree.Tp = Tp_new
@@ -61,7 +61,7 @@ class ngbtree():
         #List of particles
         t0 = time()
         
-        self.Tp            = { particle.index: treepoint(particle) for particle in particles}
+        self.Tp            = { particle.ID: treepoint(particle) for particle in particles}
         self.Mpart         = Problem.Mpart
         self.FacIntToCoord = Problem.FacIntToCoord
         self.Boxsize       = Problem.Boxsize
