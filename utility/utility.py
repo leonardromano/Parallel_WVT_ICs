@@ -13,9 +13,9 @@ def volume(vector):
         dV *= dx
     return dV
 
-def factorial(n):
+def factorial(n, lowerb = 2):
     result = 1
-    for i in range(2, n+1):
+    for i in range(lowerb, n+1):
         result *= i
     return result
 

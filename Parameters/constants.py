@@ -59,9 +59,5 @@ else:
 #Normalization constant for Kernel
 if NDIM == 1:
     NORM_FAC = 5/4
-elif NDIM % 2 == 0:
-    NORM_FAC = factorial(NDIM + 5) * NDIM * factorial(NDIM//2 - 1) * \
-               pi**(-NDIM//2) / factorial(NDIM + 1) / 240
 else:
-    NORM_FAC = factorial(NDIM + 5) * (4 * pi)**(-(NDIM-1)//2) / 120 / \
-               factorial((NDIM-1)//2 - 1) / (NDIM**2 - 1)
+    NORM_FAC = factorial(NDIM + 5, NDIM + 2) / (120 * NORM_COEFF)
