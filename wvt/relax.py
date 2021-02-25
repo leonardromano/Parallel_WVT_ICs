@@ -99,7 +99,7 @@ def regularise_particles(Particles, Problem, density_func):
                 break
         
         #enforce convergence if distribution doesnt tighten
-        if cnts[1] > last_cnt and (niter > LastMoveStep or niter % RedistributionFrequency != 0 ):
+        if cnts[1] >= last_cnt and (niter > LastMoveStep or niter % RedistributionFrequency != 0 ):
             step *= StepReduction
         
         last_cnt = cnts[1]
