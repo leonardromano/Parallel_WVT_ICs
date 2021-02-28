@@ -59,10 +59,12 @@ class worker():
     def nested_sph_loop(self, axis, bounds, pt, h, index = zeros(NDIM, dtype=int)):
         if axis < NDIM:
             ind = copy(index)
+            print("axis = %d, index = "%(axis) + str(ind))
             for i in range(bounds[axis][0], bounds[axis][1]):
                 ind[axis] = i
                 self.nested_sph_loop(axis+1, bounds, pt, h, ind)
         else:
+            print("EVAL: axis = %d, index = "%(axis) + str(index))
             #get the distance between particle and cell
             ds2 = 0
             for i in range(NDIM):
@@ -82,7 +84,6 @@ class worker():
     def process(self, particles):
         for particle in particles:
             self.update(particle)
-        print(self.out)
         return self.out  
 
 ###############################################################################
