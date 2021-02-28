@@ -226,7 +226,7 @@ def fill_gaps(Particles, Problem):
                     break
             if seed_new_blob:
                 #this cell seeds a new blob
-                blobs.append(cell)
+                blobs.append(blob(cell))
          
     #now merge closeby blobs
     blobs = merge(blobs, Problem, Nbins)
