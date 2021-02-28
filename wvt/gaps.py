@@ -29,12 +29,13 @@ class worker():
         self.Nbins = Nbins
         self.dr = dr
         self.Periodic = Problem.Periodic
+        self.FacIntToCoord = Problem.FacIntToCoord
         
     def update(self, p):
         #initialize the bounds of the region occupied by the particle
         #now compute the bounds of our computation
         h  = p.Hsml
-        pt = p.position
+        pt = p.position * self.FacIntToCoord
         
         bounds = list()
         for i in range(NDIM):
@@ -44,7 +45,8 @@ class worker():
                 bounds[i][1] = min(self.Nbins, bounds[i][1])
         
         #loop over all bins the particle is occupying
-        self.nested_sph_loop(0, bounds, pt, h)
+        index = [0 for _ in range(NDIM)]
+        self.nested_sph_loop(0, bounds, pt, h, index)
     
     def find_cell_index(self, index):
         for i in range(NDIM):
@@ -55,14 +57,12 @@ class worker():
                     index[i] -= self.Nbins
         return index
 
-    def nested_sph_loop(self, axis, bounds, pt, h, index = [0 for _ in range(NDIM)]):
+    def nested_sph_loop(self, axis, bounds, pt, h, index):
         if axis < NDIM:
             for i in range(bounds[axis][0], bounds[axis][1]):
                 index[axis] = i
-                print("axis = %d, index = "%(axis) + str(index))
                 self.nested_sph_loop(axis+1, bounds, pt, h, index)
         else:
-            print("EVAL: axis = %d, index = "%(axis) + str(index))
             #get the distance between particle and cell
             ds2 = 0
             for i in range(NDIM):
@@ -112,11 +112,9 @@ def compute_density_map(Particles, Problem, Nbins, dr):
     
     #now reduce the individual results
     rho = zeros(tuple(Nbins for _ in range(NDIM)))
-    print(rho.shape)
     while len(pending):
         done, pending = ray.wait(pending)
         rho += ray.get(done[0])
-    print(rho)
     
     rho *= Problem.Mpart
     return rho
