@@ -55,7 +55,7 @@ LastMoveStep = 150
 #Gapfilling parameters
 #####################################################################
 #How many cells can a cell be away from a blob to be considered part of it?
-DistanceThreshold = 3
+DistanceThreshold = 1
 #How many cells does a blob need to have at least to be considered?
 BlobSizeThreshold = 10
 #How many sites should be probed each step?

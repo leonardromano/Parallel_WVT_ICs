@@ -155,6 +155,7 @@ def merge(blobs, Problem, Nbins):
     while len(blobs) > 0:
         blob1 = blobs.pop()
         for i in range(len(blobs)):
+            print(blob1.Ncells)
             if close(blob1, blobs[i], Problem, Nbins):
                 blob1 += blobs.pop(i)
                 #need to repeat until no other blob is close
@@ -232,6 +233,7 @@ def fill_gaps(Particles, Problem):
     print(len(blobs))
     for blob1 in blobs:
         print(blob1.Ncells)
+    print("start merge...")
     #now merge closeby blobs
     blobs = merge(blobs, Problem, Nbins)
     
