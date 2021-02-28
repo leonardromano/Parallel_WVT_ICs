@@ -57,13 +57,15 @@ LastMoveStep = 150
 #How many cells can a cell be away from a blob to be considered part of it?
 DistanceThreshold = 1
 #How many cells does a blob need to have at least to be considered?
-BlobSizeThreshold = 10
+BlobSizeThreshold = 5
+#How unpopulated does a region need to be?
+FillThreshold     = -0.2 
 #How many sites should be probed each step?
 Nfill = 10
 #How many particles do we want to have at most?
 MaxNpart = 4450
 #How often should we try to fill gaps (e.g. all x iterations)
-GapFillingFrequency = 10
+GapFillingFrequency = 1
 #When should the last Gapfilling happen?
 LastFillStep = 150
 #####################################################################
