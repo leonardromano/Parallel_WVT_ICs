@@ -54,8 +54,12 @@ LastMoveStep = 50
 
 #Gapfilling parameters
 #####################################################################
+#How many cells can a cell be away from a blob to be considered part of it?
+DistanceThreshold = 3
+#How many cells does a blob need to have at least to be considered?
+BlobSizeThreshold = 10
 #How many sites should be probed each step?
-Nfill = 50
+Nfill = 10
 #How many particles do we want to have at most?
 MaxNpart = 2100
 #How often should we try to fill gaps (e.g. all x iterations)

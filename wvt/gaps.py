@@ -6,18 +6,20 @@ Created on Sat Feb 27 20:52:12 2021
 @author: leonard
 """
 
-from numpy import zeros, sqrt, linspace, meshgrid, exp, partition, where
+from numpy import zeros, sqrt, linspace, meshgrid, exp, asarray, where
 import ray
 from sys import exit
 from time import time
 
 from data.structures import particle_data
 from Parameters.constants import NCPU
-from Parameters.parameter import NDIM, Problem_Specifier, Nfill
+from Parameters.parameter import NDIM, Problem_Specifier, Nfill, \
+    DistanceThreshold, BlobSizeThreshold
 from sph.Kernel import kernel
 from sph.sph import find_sph_quantities
 from tree.tree import ngbtree
 from utility.integer_coordinates import convert_to_int_position
+from utility.utility import norm
 
 ###############################################################################
 #worker class
@@ -99,6 +101,77 @@ else:
     exit()
     
 ###############################################################################
+# blob-class ##################################################################
+
+class blob():
+    "This class represents a collection of closeby cells"
+    def __init__(self, cell):
+        self.cells = [cell]
+        self.Ncells = 1
+    
+    def __iadd__(self, other):
+        self.cells += other.cells
+        self.Ncells += other.Ncells
+    
+    def append(self, cell):
+        self.cells.append(cell)
+        self.Ncells += 1
+    
+    def close(self, cell, Problem, Nbins):
+        "check if the cell is close to the blob"
+        for point in self.cells:
+            dx = zeros(NDIM, dtype = int)
+            for i in range(NDIM):
+                if Problem.Periodic[i]:
+                    if abs(cell[i] - point[i]) < Nbins/2:
+                        dx[i] += cell[i] - point[i]
+                    elif cell[i] > point[i]:
+                        dx[i] += cell[i] - point[i] - Nbins
+                    else:
+                        dx[i] += cell[i] - point[i] + Nbins
+                else:
+                    dx[i] += cell[i] - point[i]
+            if norm(dx) <= DistanceThreshold:
+                return 1
+        return 0
+    
+    def center_of_errormass(self, error_map, dr):
+        "compute the center of the blob"
+        weight = 0.0
+        position = zeros(NDIM)
+        #determine cell within blob with 
+        for i in range(self.Ncells):
+            cell = self.cells[i]
+            error = error_map[cell]
+            weight += error
+            position += error * asarray(cell)
+        position *= dr/weight
+        return position
+            
+                    
+def merge(blobs, Problem, Nbins):
+    "Merge all closeby blobs"
+    done = list()
+    while len(blobs):
+        blob1 = blobs.pop()
+        for i in range(len(blobs)):
+            if close(blob1, blobs[i], Problem, Nbins):
+                blob1 += blobs.pop(i)
+                #need to repeat until no other blob is close
+                i = 0
+        done.append(blob1)
+    return done
+        
+def close(blob1, blob2, Problem, Nbins):
+    "Check if two blobs are close"
+    for cell in blob1.cells:
+        if blob2.close(cell, Problem, Nbins):
+            return 1
+    return 0
+                
+    
+###############################################################################    
+        
 
 def compute_density_map(Particles, Problem, Nbins, dr):
     "Project the density on a grid"
@@ -135,25 +208,36 @@ def fill_gaps(Particles, Problem):
     
     error_map = rho/rho_model(*grid) - 1
     
-    #Now find Nfill unpopulated positions
-    smallest = partition(error_map, Nfill, axis=None)[:Nfill]
-    indices = [where(error_map == value) for value in smallest]
+    #First find all underpopulated cells
+    Cells = list(zip(*where(error_map < 0.0)))
     
-    #populate unpopulated regions
-    ninsert = 0
-    for index in indices:
-        listOfCoordinates = list(zip(*index))
-        for coord in listOfCoordinates:
-            position = zeros(NDIM)
-            boundary = 0
-            for i in range(NDIM):
-                if coord[i] < 3 or Nbins - coord[i] < 3:
-                    #Boundary regions are by construction underpopulated -- ignore
-                    boundary = 1
+    #identify closeby cells as blobs
+    blobs = list()
+    for cell in Cells:
+        if not blobs:
+            blobs.append(blob(cell))
+        else:
+            seed_new_blob = 1
+            for region in blobs:
+                #first see if this cell can be added to an already existing blob
+                if region.close(cell, Problem, Nbins):
+                    region.append(cell)
+                    seed_new_blob = 0
                     break
-                position[i] += coord[i] * dr[i]
-            if boundary:
-                continue
+            if seed_new_blob:
+                #this cell seeds a new blob
+                blobs.append(cell)
+         
+    #now merge closeby blobs
+    blobs = merge(blobs, Problem, Nbins)
+    
+    #Consider only the Nfill largest blobs
+    blobs = blobs.sort(key=lambda x: x.Ncells, reverse=True)[:Nfill]
+    
+    ninsert = 0
+    for region in blobs:
+        if region.Ncell >= BlobSizeThreshold:
+            position = region.center_of_errormass(error_map, dr)
             #spawn particle
             Particles.append(particle_data(Problem.Npart + ninsert))
             Particles[-1].position = convert_to_int_position(position, Problem.FacIntToCoord)
