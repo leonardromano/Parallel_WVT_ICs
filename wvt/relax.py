@@ -61,7 +61,7 @@ def regularise_particles(Particles, Problem, density_func):
         #fill empty regions with new particles
         if niter <= LastFillStep and niter % GapFillingFrequency == 0 \
             and Problem.Npart < MaxNpart:
-            Particles, NgbTree_ref = fill_gaps(Particles, Problem, density_func, niter)
+            Particles, NgbTree_ref = fill_gaps(Particles, Problem)
         
         #redistribute particles
         if niter <= LastMoveStep and niter % RedistributionFrequency == 0:
