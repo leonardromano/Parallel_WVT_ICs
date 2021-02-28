@@ -11,7 +11,7 @@ from time import time
 
 from Parameters.parameter import NDIM
 from Parameters.constants import DESNNGB, NORM_COEFF, BITS_FOR_POSITIONS, MAX_INT, \
-    NCPU, Load
+    NCPU
 from utility.integer_coordinates import convert_to_int_position
 from utility.utility import norm
 
@@ -45,6 +45,7 @@ def drift_particles(Particles, Problem, density_func):
     "In this function the particles are drifted according to their WVT forces"
     t0 = time()
     
+    Load = Problem.Npart//NCPU
     #split work evenly among processes
     result = [drift.remote(Particles[i * Load:(i+1) * Load], Problem, density_func) \
               for i in range(NCPU-1)]

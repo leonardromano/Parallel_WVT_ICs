@@ -22,12 +22,14 @@ from output.diagnostics import write_diagnostics, write_step_file
 from Parameters.constants import LARGE_NUM
 from Parameters.parameter import Npart, NDIM, Maxiter, MpsFraction, \
     StepReduction, LimitMps, LimitMps10, LimitMps100, LimitMps1000, \
-    LastMoveStep, RedistributionFrequency, SAVE_WVT_STEPS
+    LastMoveStep, RedistributionFrequency, LastFillStep, GapFillingFrequency, \
+    MaxNpart, SAVE_WVT_STEPS
 from sph.sph import initial_guess_hsml, find_sph_quantities
 from tree.tree import ngbtree, update_Tp
 from utility.errors import compute_l1_error
 from wvt.drift import drift_particles
 from wvt.forces import compute_wvt_forces
+from wvt.gaps import fill_gaps
 from wvt.redistribution import redistribute
 
 def regularise_particles(Particles, Problem, density_func):
@@ -55,6 +57,11 @@ def regularise_particles(Particles, Problem, density_func):
         niter += 1
         if SAVE_WVT_STEPS:
             write_step_file(Particles, Problem, niter)
+            
+        #fill empty regions with new particles
+        if niter <= LastFillStep and niter % GapFillingFrequency == 0 \
+            and Problem.Npart < MaxNpart:
+            Particles, NgbTree_ref = fill_gaps(Particles, Problem, density_func, niter)
         
         #redistribute particles
         if niter <= LastMoveStep and niter % RedistributionFrequency == 0:
@@ -79,7 +86,7 @@ def regularise_particles(Particles, Problem, density_func):
         #now drift all particles
         Particles, cnts = drift_particles(Particles, Problem, density_func)
         #now some diagnostics
-        move_Mps = cnts * 100/Npart
+        move_Mps = cnts * 100/Problem.Npart
         print("delta %g > dx; %g > dx/10; %g > dx/100; %g > dx/1000\n"\
               %(move_Mps[0], move_Mps[1], move_Mps[2], move_Mps[3]))
         if niter == 1:

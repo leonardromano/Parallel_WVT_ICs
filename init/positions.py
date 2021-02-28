@@ -9,7 +9,7 @@ from numpy.random import seed
 import ray
 from time import time
 
-from Parameters.constants import NCPU, Load
+from Parameters.constants import NCPU
 
 ###############################################################################
 #parallel worker class
@@ -39,6 +39,7 @@ def sample(Particles, Problem, funcs):
     t0 = time()
     
     #split work evenly among processes
+    Load = Problem.Npart//NCPU
     actors = [worker.remote(i) for i in range(NCPU)]
     
     result = [actors[i].process.remote(Particles[i * Load:(i+1) * Load], funcs) \

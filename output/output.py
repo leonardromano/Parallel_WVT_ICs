@@ -9,7 +9,7 @@ import h5py
 from numpy import zeros
 from time import time
 
-from Parameters.parameter import output, Npart, NDIM
+from Parameters.parameter import output, NDIM
 
 
 def write_output(Particles, Problem):
@@ -20,12 +20,13 @@ def write_output(Particles, Problem):
     #first dump all the header info
     header = f.create_group("Header")
     h_att = header.attrs
-    h_att.create("NumPart", Npart)
+    h_att.create("NumPart", Problem.Npart)
     h_att.create("Mpart", Problem.Mpart)
     h_att.create("Boxsize", Problem.Boxsize)
     h_att.create("Periodic", Problem.Periodic)
     h_att.create("NDIM", NDIM)
     #now make the data sets for the particle data
+    Npart = Problem.Npart
     IDs        = zeros((Npart), dtype = int)
     positions  = zeros((Npart, NDIM), dtype = float)
     velocities = zeros((Npart, NDIM), dtype = float)
@@ -33,14 +34,15 @@ def write_output(Particles, Problem):
     hsml       = zeros((Npart), dtype = float)
     pressures  = zeros((Npart), dtype = float)
     entropies  = zeros((Npart), dtype = float)
-    for i in range(Npart):
-        IDs[i]        += Particles[i].ID
-        positions[i]  += Particles[i].position * Problem.FacIntToCoord
-        velocities[i] += Particles[i].velocity
-        densities[i]  += Particles[i].Rho
-        hsml[i]       += Particles[i].Hsml
-        pressures[i]  += Particles[i].Pressure
-        entropies[i]  += Particles[i].Entropy
+    for particle in Particles:
+        i = particle.ID
+        IDs[i]        += i
+        positions[i]  += particle.position * Problem.FacIntToCoord
+        velocities[i] += particle.velocity
+        densities[i]  += particle.Rho
+        hsml[i]       += particle.Hsml
+        pressures[i]  += particle.Pressure
+        entropies[i]  += particle.Entropy
     f.create_dataset("PartData/IDs", data = IDs,  dtype = "u4")
     f.create_dataset("PartData/Coordinates", data = positions, dtype = "f4")
     f.create_dataset("PartData/Velocity", data = velocities, dtype = "f4")

@@ -52,6 +52,18 @@ RedistributionFrequency = 5
 LastMoveStep = 50
 #####################################################################
 
+#Gapfilling parameters
+#####################################################################
+#How many sites should be probed each step?
+Nfill = 50
+#How many particles do we want to have at most?
+MaxNpart = 2100
+#How often should we try to fill gaps (e.g. all x iterations)
+GapFillingFrequency = 10
+#When should the last Gapfilling happen?
+LastFillStep = 150
+#####################################################################
+
 #Problem related parameters
 #####################################################################
 #Number of dimensions

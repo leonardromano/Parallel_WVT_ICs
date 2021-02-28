@@ -20,6 +20,7 @@ def setup_Rayleigh_Taylor(Problem, Functions):
     Problem.Boxsize[1]      = 1.
     Problem.update_int_conversion()
     Problem.Periodic[1]     = 0
+    Problem.Npart           = Npart
     Problem.Mpart           = 0.75/Npart
     
     Problem.Rho_Max         = 2.
@@ -56,7 +57,7 @@ def Rayleigh_Taylor_Instability_Velocity(particle):
     y = particle.position[1] / (1 << BITS_FOR_POSITIONS)
     out = zeros(2)
     if (0.3 < y < 0.7):
-        #density perturbation in x-direction
+        #density perturbation in y-direction
         out[1] = 0.025 * (1 + cos(8 * pi * (x + 0.25))) * \
                          (1 + cos(5 * pi * (y - 0.5)))
     particle.velocity = out
@@ -81,6 +82,7 @@ def setup_constant(Problem, Functions):
     Problem.Boxsize[0]      = 1.
     Problem.Boxsize[1]      = 1.
     Problem.update_int_conversion()
+    Problem.Npart           = Npart
     Problem.Mpart           = 1./Npart
     
     Problem.Rho_Max         = 1.

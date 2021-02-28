@@ -9,8 +9,7 @@ from numpy import sqrt
 import ray
 from time import time
 
-from Parameters.constants import LARGE_NUM, NCPU, Load
-from Parameters.parameter import Npart
+from Parameters.constants import LARGE_NUM, NCPU
 from utility.utility import relative_density_error
 
 ###############################################################################
@@ -35,6 +34,8 @@ def get_errors(Particles):
 def compute_l1_error(Particles, Problem):
     t0 = time()
     
+    Npart = Problem.Npart
+    Load = Npart//NCPU
     #split work evenly among processes
     pending = [get_errors.remote(Particles[i * Load: (i+1) * Load]) \
                for i in range(NCPU-1)]

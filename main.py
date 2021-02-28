@@ -41,6 +41,7 @@ def main():
     print("L1-ERROR: %g (%g)"%(Problem.Timer["L1-ERROR"], Problem.Timer["L1-ERROR"]/T))
     print("WVT: %g (%g)"%(Problem.Timer["WVT"], Problem.Timer["WVT"]/T))
     print("REDIST: %g (%g)"%(Problem.Timer["REDIST"], Problem.Timer["REDIST"]/T))
+    print("FILL: %g (%g)"%(Problem.Timer["FILL"], Problem.Timer["FILL"]/T))
     print("OUTPUT: %g (%g)"%(Problem.Timer["OUTPUT"], Problem.Timer["OUTPUT"]/T))
     print("We are done now.\nBye.")
     ray.shutdown()

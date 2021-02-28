@@ -12,7 +12,7 @@ from sys import exit
 
 from Parameters.constants import DESNNGB, NNGBDEV, NORM_COEFF, NCPU, \
     MIN_LOAD_PER_CORE, MAX_INT
-from Parameters.parameter import NDIM, Npart
+from Parameters.parameter import NDIM
 from sph.Kernel import kernel, wendland_bias_correction
 from utility.integer_coordinates import get_distance_vector
 from utility.utility import norm
@@ -176,6 +176,7 @@ def densities_determine(NgbTree_ref, Workstack, npleft):
 
 def density(Workstack, NgbTree_ref):
     "For each particle compute density, smoothing length and thermodynamic variables"
+    Npart = len(Workstack)
     Left = zeros(Npart)
     Right = ones(Npart) * 1e30
     Donestack = list()

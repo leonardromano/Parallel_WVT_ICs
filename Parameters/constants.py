@@ -23,7 +23,6 @@ elif Scheduler == "PBS":
     NCPU = int(environ['PBS_NP'])
 else:
     NCPU = cpu_count(logical=False)
-Load = Npart//NCPU
 MIN_LOAD_PER_CORE = 20
 
 #small and big numbers

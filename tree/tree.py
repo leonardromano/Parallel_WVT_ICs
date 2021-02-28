@@ -12,7 +12,7 @@ from time import time
 
 from Parameters.constants import BITS_FOR_POSITIONS, MAX_INT, \
                                  TREE_NUM_BEFORE_NODESPLIT
-from Parameters.parameter import NDIM, Npart
+from Parameters.parameter import NDIM
 
 class treepoint():
     "reduced particle data for tree applications"
@@ -68,13 +68,13 @@ class ngbtree():
         self.Boxsize       = Problem.Boxsize
         self.Periodic      = Problem.Periodic
 
-        self.Father      = empty(Npart, dtype = int)
-        self.Nextnode    = empty(Npart + 2, dtype = int)
+        self.Father      = empty(Problem.Npart, dtype = int)
+        self.Nextnode    = empty(Problem.Npart + 2, dtype = int)
         self.Nodes       = list()
         
         #data for referencing nodes/particles
-        self.MaxPart              = Npart
-        self.MaxNodes             = 1 + Npart + 100
+        self.MaxPart              = Problem.Npart
+        self.MaxNodes             = 1 + Problem.Npart + 100
         self.NextFreeNode         = 0
         self.FirstNonTopLevelNode = 0
         

@@ -9,7 +9,7 @@ import ray
 from time import time
 
 from Parameters.constants import DESNNGB, BITS_FOR_POSITIONS, NORM_COEFF, \
-    NCPU, Load
+    NCPU
 from Parameters.parameter import NDIM
 from tree.treewalk import density
 
@@ -60,6 +60,8 @@ def find_sph_quantities(Particles, NgbTree_ref, Problem):
 
 def initial_guess_hsml(Particles, NgbTree_ref):
     "computes an initial guess for the smoothing lengths"
+    Load = len(Particles)//NCPU
+    
     result = [process.remote(Particles[i * Load:(i+1) * Load], NgbTree_ref) \
               for i in range(NCPU-1)]
     result.append(process.remote(Particles[(NCPU-1) * Load:], NgbTree_ref))

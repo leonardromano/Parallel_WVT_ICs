@@ -44,6 +44,7 @@ class problem():
                               "L1-ERROR": 0,
                               "WVT": 0,
                               "REDIST": 0,
+                              "FILL": 0,
                               "OUTPUT": 0}
         
     def update_int_conversion(self):

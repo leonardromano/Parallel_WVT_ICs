@@ -12,7 +12,7 @@ from time import time
 
 #custom libraries
 from Parameters.parameter import NDIM
-from Parameters.constants import NCPU, Load
+from Parameters.constants import NCPU
 from tree.treewalk import get_minimum_distance_from_wall, add_ghost
 from utility.integer_coordinates import get_distance_vector
 from utility.utility import relative_density_error, norm, sign
@@ -68,6 +68,7 @@ def compute_wvt_forces(Particles, Problem, NgbTree_ref, step):
     "In this function the WVT-forces are computed"
     t0 = time()
     
+    Load = Problem.Npart//NCPU
     #split work evenly among processes
     result = [process.remote(Particles[i * Load:(i+1) * Load], NgbTree_ref, step) \
               for i in range(NCPU-1)]
