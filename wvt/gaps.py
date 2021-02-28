@@ -14,7 +14,7 @@ from time import time
 from data.structures import particle_data
 from Parameters.constants import NCPU
 from Parameters.parameter import NDIM, Problem_Specifier, Nfill, \
-    DistanceThreshold, BlobSizeThreshold
+    DistanceThreshold, BlobSizeThreshold, FillThreshold
 from sph.Kernel import kernel
 from sph.sph import find_sph_quantities
 from tree.tree import ngbtree
@@ -79,7 +79,7 @@ class worker():
             index = self.find_cell_index(index)
             
             #now add weight to the cell
-            self.out[tuple(index)] += kernel(ds, h)
+            self.out[tuple(index)[::-1]] += kernel(ds, h)
     
     def process(self, particles):
         for particle in particles:
@@ -106,15 +106,16 @@ else:
 class blob():
     "This class represents a collection of closeby cells"
     def __init__(self, cell):
-        self.cells = [cell]
+        self.cells = [cell[::-1]]
         self.Ncells = 1
     
     def __iadd__(self, other):
         self.cells += other.cells
         self.Ncells += other.Ncells
+        return self
     
     def append(self, cell):
-        self.cells.append(cell)
+        self.cells.append(cell[::-1])
         self.Ncells += 1
     
     def close(self, cell, Problem, Nbins):
@@ -142,7 +143,7 @@ class blob():
         #determine cell within blob with 
         for i in range(self.Ncells):
             cell = self.cells[i]
-            error = error_map[cell]
+            error = error_map[cell[::-1]]
             weight += error
             position += error * asarray(cell)
         position *= dr/weight
@@ -154,12 +155,16 @@ def merge(blobs, Problem, Nbins):
     done = list()
     while len(blobs) > 0:
         blob1 = blobs.pop()
-        for i in range(len(blobs)):
-            print(blob1.Ncells)
+        i = 0
+        L = len(blobs)
+        while i < L:
             if close(blob1, blobs[i], Problem, Nbins):
                 blob1 += blobs.pop(i)
                 #need to repeat until no other blob is close
-                i = 0
+                L -= 1
+                i  = 0
+            else:
+                i+= 1
         done.append(blob1)
     return done
         
@@ -210,9 +215,8 @@ def fill_gaps(Particles, Problem):
     error_map = rho/rho_model(*grid) - 1
     
     #First find all underpopulated cells
-    cells = list(zip(*where(error_map < 0.0)))
+    cells = list(zip(*where(error_map < FillThreshold)))
     
-    print(len(cells))
     #identify closeby cells as blobs
     blobs = list()
     for cell in cells:
@@ -222,7 +226,7 @@ def fill_gaps(Particles, Problem):
             seed_new_blob = 1
             for region in blobs:
                 #first see if this cell can be added to an already existing blob
-                if region.close(cell, Problem, Nbins):
+                if region.close(cell[::-1], Problem, Nbins):
                     region.append(cell)
                     seed_new_blob = 0
                     break
@@ -230,20 +234,25 @@ def fill_gaps(Particles, Problem):
                 #this cell seeds a new blob
                 blobs.append(blob(cell))
     
-    print(len(blobs))
-    for blob1 in blobs:
-        print(blob1.Ncells)
-    print("start merge...")
     #now merge closeby blobs
     blobs = merge(blobs, Problem, Nbins)
     
     #Consider only the Nfill largest blobs
-    blobs = blobs.sort(key=lambda x: x.Ncells, reverse=True)[:Nfill]
+    blobs.sort(key=lambda x: x.Ncells, reverse=True)
     
     ninsert = 0
-    for region in blobs:
-        if region.Ncell >= BlobSizeThreshold:
+    for region in blobs[:Nfill]:
+        if region.Ncells >= BlobSizeThreshold:
             position = region.center_of_errormass(error_map, dr)
+            #if the underpopulated region is close to a boundary, ignore it
+            boundary = 0
+            for i in range(NDIM):
+                if not Problem.Periodic[i]:
+                    if position[i] < 3 * dr[i] or position[i]/dr[i] > Nbins - 3:
+                        boundary = 1
+                        break
+            if boundary:
+                continue
             #spawn particle
             Particles.append(particle_data(Problem.Npart + ninsert))
             Particles[-1].position = convert_to_int_position(position, Problem.FacIntToCoord)
