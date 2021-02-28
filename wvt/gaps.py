@@ -6,7 +6,7 @@ Created on Sat Feb 27 20:52:12 2021
 @author: leonard
 """
 
-from numpy import zeros, sqrt, linspace, meshgrid, exp, partition, where, copy
+from numpy import zeros, sqrt, linspace, meshgrid, exp, partition, where
 import ray
 from sys import exit
 from time import time
@@ -47,22 +47,20 @@ class worker():
         self.nested_sph_loop(0, bounds, pt, h)
     
     def find_cell_index(self, index):
-        ind = copy(index)
         for i in range(NDIM):
             if self.Periodic[i]:
-                while ind[i] < 0:
-                    ind[i] += self.Nbins
-                while ind[i] >= self.Nbins:
-                    ind[i] -= self.Nbins
-        return ind
+                while index[i] < 0:
+                    index[i] += self.Nbins
+                while index[i] >= self.Nbins:
+                    index[i] -= self.Nbins
+        return index
 
-    def nested_sph_loop(self, axis, bounds, pt, h, index = zeros(NDIM, dtype=int)):
+    def nested_sph_loop(self, axis, bounds, pt, h, index = [0 for _ in range(NDIM)]):
         if axis < NDIM:
-            ind = copy(index)
-            print("axis = %d, index = "%(axis) + str(ind))
             for i in range(bounds[axis][0], bounds[axis][1]):
-                ind[axis] = i
-                self.nested_sph_loop(axis+1, bounds, pt, h, ind)
+                index[axis] = i
+                print("axis = %d, index = "%(axis) + str(index))
+                self.nested_sph_loop(axis+1, bounds, pt, h, index)
         else:
             print("EVAL: axis = %d, index = "%(axis) + str(index))
             #get the distance between particle and cell
