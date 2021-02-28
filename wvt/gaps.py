@@ -152,7 +152,7 @@ class blob():
 def merge(blobs, Problem, Nbins):
     "Merge all closeby blobs"
     done = list()
-    while len(blobs):
+    while len(blobs) > 0:
         blob1 = blobs.pop()
         for i in range(len(blobs)):
             if close(blob1, blobs[i], Problem, Nbins):
@@ -209,11 +209,12 @@ def fill_gaps(Particles, Problem):
     error_map = rho/rho_model(*grid) - 1
     
     #First find all underpopulated cells
-    Cells = list(zip(*where(error_map < 0.0)))
+    cells = list(zip(*where(error_map < 0.0)))
     
+    print(len(cells))
     #identify closeby cells as blobs
     blobs = list()
-    for cell in Cells:
+    for cell in cells:
         if not blobs:
             blobs.append(blob(cell))
         else:
@@ -227,7 +228,10 @@ def fill_gaps(Particles, Problem):
             if seed_new_blob:
                 #this cell seeds a new blob
                 blobs.append(blob(cell))
-         
+    
+    print(len(blobs))
+    for blob1 in blobs:
+        print(blob1.Ncells)
     #now merge closeby blobs
     blobs = merge(blobs, Problem, Nbins)
     
