@@ -34,14 +34,14 @@ class worker():
         #initialize the bounds of the region occupied by the particle
         #now compute the bounds of our computation
         h  = p.Hsml
-        pt = p.Position
+        pt = p.position
         
         bounds = list()
         for i in range(NDIM):
-            bounds.append([int((pt[i] - h)/self.dr[i])])
+            bounds.append([int((pt[i] - h)/self.dr[i]), int((pt[i] + h)/self.dr[i])])
             if not self.Periodic[i]:
                 bounds[i][0] = max(0, bounds[i][0])
-                bounds[i][1] = max(self.Nbins, bounds[i][1])
+                bounds[i][1] = min(self.Nbins, bounds[i][1])
         
         #loop over all bins the particle is occupying
         self.nested_sph_loop(0, bounds, pt, h)
