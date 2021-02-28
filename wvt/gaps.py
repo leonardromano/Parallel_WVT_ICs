@@ -137,15 +137,12 @@ def fill_gaps(Particles, Problem):
     
     #Now find Nfill unpopulated positions
     smallest = partition(error_map, Nfill, axis=None)[:Nfill]
-    print(smallest)
     indices = [where(error_map == value) for value in smallest]
-    print(indices)
     
     #populate unpopulated regions
     ninsert = 0
     for index in indices:
         listOfCoordinates = list(zip(*index))
-        print(listOfCoordinates)
         for coord in listOfCoordinates:
             position = zeros(NDIM)
             boundary = 0
@@ -158,7 +155,6 @@ def fill_gaps(Particles, Problem):
             if boundary:
                 continue
             #spawn particle
-            print(position, coord, error_map[coord])
             Particles.append(particle_data(Problem.Npart + ninsert))
             Particles[-1].position = convert_to_int_position(position, Problem.FacIntToCoord)
             Particles[-1].Hsml = position.max()
