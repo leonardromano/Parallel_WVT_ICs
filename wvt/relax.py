@@ -106,10 +106,10 @@ def regularise_particles(Particles, Problem, density_func):
                 break
         
         #enforce convergence if distribution doesnt tighten
-        if cnts[1] >= last_cnt and (niter > LastMoveStep or niter % RedistributionFrequency != 0 ):
+        if cnts[3] >= last_cnt and (niter > LastMoveStep or niter % RedistributionFrequency != 0 ):
             step *= StepReduction
         
-        last_cnt = cnts[1]
+        last_cnt = cnts[3]
         
         #build the search tree and update SPH quantities for next iteration
         NgbTree_ref = ray.put(ngbtree(Particles, Problem))
