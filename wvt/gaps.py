@@ -82,6 +82,7 @@ class worker():
     def process(self, particles):
         for particle in particles:
             self.update(particle)
+        print(self.out)
         return self.out  
 
 ###############################################################################
@@ -112,9 +113,11 @@ def compute_density_map(Particles, Problem, Nbins, dr):
     
     #now reduce the individual results
     rho = zeros(tuple(Nbins for _ in range(NDIM)))
+    print(rho.shape)
     while len(pending):
         done, pending = ray.wait(pending)
         rho += ray.get(done[0])
+    print(rho)
     
     rho *= Problem.Mpart
     return rho
