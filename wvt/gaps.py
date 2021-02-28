@@ -198,7 +198,7 @@ def compute_density_map(Particles, Problem, Nbins, dr):
     rho *= Problem.Mpart
     return rho
 
-def fill_gaps(Particles, Problem):
+def fill_gaps(Particles, Problem, density_func):
     "If we have specified this timestep for gap-filling fill gaps"
     t0 = time()
     #first compute the density map
@@ -257,6 +257,7 @@ def fill_gaps(Particles, Problem):
             Particles.append(particle_data(Problem.Npart + ninsert))
             Particles[-1].position = convert_to_int_position(position, Problem.FacIntToCoord)
             Particles[-1].Hsml = position.max()
+            density_func(Particles[-1])
             ninsert += 1
     
     #now update the particle mass
