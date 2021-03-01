@@ -34,6 +34,7 @@ def compute_force(particle, NgbTree, step):
     particle.delta = zeros(NDIM)
     err = relative_density_error(particle)
     delta_fac = err/(1 + err)
+    sgn1 = sign(particle)
     
     #prepare boundary treatment
     if particle.CloseToWall:
@@ -51,12 +52,12 @@ def compute_force(particle, NgbTree, step):
             continue
         r  = norm(dist)
         h  = 0.5 * (particle.Hsml + ngb.Hsml)
-        sgn = sign(ngb)
+        sgn2 = sign(ngb)
         if NDIM == 1:
             wk = log(r/h + 1e-3)
         else:
             wk = (r/h + 1e-3)**(-(NDIM-1))
-        particle.delta += sgn * h * wk * dist / r
+        particle.delta += sgn1 * sgn2 * h * wk * dist / r
     #reduce stepsize for particles with small error
     particle.delta *= step * delta_fac
     #reduce memory load
