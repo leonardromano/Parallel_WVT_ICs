@@ -15,7 +15,7 @@ from Parameters.parameter import NDIM
 from Parameters.constants import NCPU
 from tree.treewalk import get_minimum_distance_from_wall, add_ghost
 from utility.integer_coordinates import get_distance_vector
-from utility.utility import relative_density_error, norm, sign
+from utility.utility import relative_density_error, norm
 
 ###############################################################################
 #parallel worker job
@@ -32,9 +32,7 @@ def process(Particles, NgbTree, step):
     
 def compute_force(particle, NgbTree, step):
     particle.delta = zeros(NDIM)
-    err = relative_density_error(particle)
-    delta_fac = err/(1 + err)
-    sgn1 = sign(particle)
+    err1 = relative_density_error(particle)
     
     #prepare boundary treatment
     if particle.CloseToWall:
@@ -52,14 +50,16 @@ def compute_force(particle, NgbTree, step):
             continue
         r  = norm(dist)
         h  = 0.5 * (particle.Hsml + ngb.Hsml)
-        sgn2 = sign(ngb)
+        err2 = relative_density_error(ngb)
+        err = 0.5 * (err1 + err2)
+        delta_fac = err/(1 + err)
         if NDIM == 1:
             wk = log(r/h + 1e-3)
         else:
             wk = (r/h + 1e-3)**(-(NDIM-1))
-        particle.delta += sgn1 * sgn2 * h * wk * dist / r
+        particle.delta += delta_fac * h * wk * dist / r
     #reduce stepsize for particles with small error
-    particle.delta *= step * delta_fac
+    particle.delta *= step
     #reduce memory load
     particle.neighbors = list()
 

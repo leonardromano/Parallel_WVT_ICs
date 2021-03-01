@@ -56,17 +56,18 @@ def regularise_particles(Particles, Problem, density_func):
         
         niter += 1
         if SAVE_WVT_STEPS:
-            write_step_file(Particles, Problem, niter)
+            write_step_file(Particles, Problem, niter) 
+        
+        #redistribute particles
+        if niter <= LastMoveStep and niter % RedistributionFrequency == 0:
+            Particles, NgbTree_ref = redistribute(Particles, Problem, \
+                                                  density_func, niter)
             
         #fill empty regions with new particles
         if niter <= LastFillStep and niter % GapFillingFrequency == 0 \
             and Problem.Npart < MaxNpart:
             Particles, NgbTree_ref = fill_gaps(Particles, Problem, density_func)
-        
-        #redistribute particles
-        if niter <= LastMoveStep and niter % RedistributionFrequency == 0:
-            Particles, NgbTree_ref = redistribute(Particles, Problem, density_func, \
-                                              niter)
+    
 
         #next find minimum, maximum and average error and their variance
         err_min, err_max, \
