@@ -58,15 +58,18 @@ def regularise_particles(Particles, Problem, density_func):
         if SAVE_WVT_STEPS:
             write_step_file(Particles, Problem, niter) 
         
+        flag_decrease_stepsize = 1
         #redistribute particles
         if niter <= LastMoveStep and niter % RedistributionFrequency == 0:
             Particles, NgbTree_ref = redistribute(Particles, Problem, \
                                                   density_func, niter)
+            flag_decrease_stepsize = 0
             
         #fill empty regions with new particles
         if niter <= LastFillStep and niter % GapFillingFrequency == 0 \
             and Problem.Npart < MaxNpart:
             Particles, NgbTree_ref = fill_gaps(Particles, Problem, density_func)
+            flag_decrease_stepsize = 0
     
 
         #next find minimum, maximum and average error and their variance
@@ -107,7 +110,7 @@ def regularise_particles(Particles, Problem, density_func):
                 break
         
         #enforce convergence if distribution doesnt tighten
-        if cnts[3] >= last_cnt[1] and cnts[1] >= last_cnt[0] and niter > LastMoveStep:
+        if cnts[3] >= last_cnt[1] and cnts[1] >= last_cnt[0] and flag_decrease_stepsize:
             step *= StepReduction
         
         last_cnt[0] = cnts[1]

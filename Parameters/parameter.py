@@ -13,7 +13,7 @@ Created on Sat Jan  2 14:56:12 2021
 #output directory
 output   = "/home/t30/all/ga87reg/Num_seminar/ICs/"  
 #Number of particles
-Npart   = 4096
+Npart   = 4000
 #Name of scheduling system
 Scheduler = "SGE"
 #save a snapshot after each step
@@ -35,7 +35,7 @@ LimitMps100 = -1
 #convergence limit for even smaller steps
 LimitMps1000 = 1
 #Maximum number of iterations
-Maxiter = 200
+Maxiter = 256
 #####################################################################
 
 #Redistribution parameters
@@ -65,9 +65,9 @@ Nfill = 10
 #How many particles do we want to have at most?
 MaxNpart = 4450
 #How often should we try to fill gaps (e.g. all x iterations)
-GapFillingFrequency = 1
+GapFillingFrequency = 11
 #When should the last Gapfilling happen?
-LastFillStep = 150
+LastFillStep = 66
 #####################################################################
 
 #Problem related parameters
