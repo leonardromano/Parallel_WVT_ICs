@@ -9,7 +9,7 @@ from numpy import pi
 from psutil import cpu_count
 from  os import environ
 
-from Parameters.parameter import NDIM, Npart, Scheduler
+from Parameters.parameter import NDIM, Scheduler
 from utility.utility import factorial
 
 #This File contains all the internal constants of the code

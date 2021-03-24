@@ -34,6 +34,12 @@ else:
                 return 0 
 
 def wendland_bias_correction(particle):
+    "correct for density bias according to Dehn & Aly (2012)"
+    epsilon = 0
     if NDIM == 3:
-        particle.Rho -= 0.0294 * (DESNNGB * 0.01)**(-0.977) * \
-                        NORM_FAC * particle.Hsml**(-NDIM)
+        epsilon = 0.0294 * (DESNNGB * 0.01)**(-0.977)
+    elif NDIM == 2:
+        epsilon = 0.1270 * (DESNNGB/16)**(-1.22)
+        
+    if epsilon != 0:
+        particle.Rho -= epsilon * NORM_FAC * particle.Hsml**(-NDIM)
