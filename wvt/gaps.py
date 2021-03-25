@@ -18,7 +18,7 @@ from sph.Kernel import kernel
 from sph.sph import find_sph_quantities
 from tree.tree import ngbtree
 from utility.integer_coordinates import convert_to_int_position
-from utility.utility import norm
+from utility.utility import norm, volume
 
 ###############################################################################
 #worker class
@@ -234,7 +234,7 @@ def fill_gaps(Particles, Problem, density_func):
             #spawn particle
             Particles.append(particle_data(Problem.Npart + ninsert))
             Particles[-1].position = convert_to_int_position(position, Problem.FacIntToCoord)
-            Particles[-1].Hsml = (region.Ncells)**(1/NDIM) * dr
+            Particles[-1].Hsml = (region.Ncells * volume(dr))**(1/NDIM) 
             density_func(Particles[-1])
             ninsert += 1
     
