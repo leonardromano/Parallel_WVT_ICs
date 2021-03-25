@@ -34,6 +34,7 @@ def write_output(Particles, Problem):
     hsml       = zeros((Npart), dtype = float)
     pressures  = zeros((Npart), dtype = float)
     entropies  = zeros((Npart), dtype = float)
+    errors     = zeros((Npart), dtype = float)
     for particle in Particles:
         i = particle.ID
         IDs[i]        += i
@@ -43,6 +44,7 @@ def write_output(Particles, Problem):
         hsml[i]       += particle.Hsml
         pressures[i]  += particle.Pressure
         entropies[i]  += particle.Entropy
+        errors[i]     += particle.Error
     f.create_dataset("PartData/IDs", data = IDs,  dtype = "u4")
     f.create_dataset("PartData/Coordinates", data = positions, dtype = "f4")
     f.create_dataset("PartData/Velocity", data = velocities, dtype = "f4")
@@ -50,6 +52,7 @@ def write_output(Particles, Problem):
     f.create_dataset("PartData/Density", data = densities, dtype = "f4")
     f.create_dataset("PartData/Pressure", data = pressures, dtype = "f4")
     f.create_dataset("PartData/SmoothingLength", data = hsml, dtype = "f4")
+    f.create_dataset("PartData/Errors", data = errors, dtype = "f4")
     f.close()
     
     t1 = time()

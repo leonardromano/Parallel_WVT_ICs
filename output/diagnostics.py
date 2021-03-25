@@ -41,6 +41,7 @@ def write_step_file(Particles, Problem, niter):
     velocities = zeros((Npart, NDIM), dtype = float)
     densities  = zeros((Npart), dtype = float)
     hsml       = zeros((Npart), dtype = float)
+    errors     = zeros((Npart), dtype = float)
     for particle in Particles:
         i = particle.ID
         IDs[i]        += particle.ID
@@ -48,11 +49,13 @@ def write_step_file(Particles, Problem, niter):
         velocities[i] += particle.velocity
         densities[i]  += particle.Rho
         hsml[i]       += particle.Hsml
+        errors[i]     += particle.Error
     f.create_dataset("PartData/IDs", data = IDs,  dtype = "u4")
     f.create_dataset("PartData/Coordinates", data = positions, dtype = "f4")
     f.create_dataset("PartData/Velocity", data = velocities, dtype = "f4")
     f.create_dataset("PartData/Density", data = densities, dtype = "f4")
     f.create_dataset("PartData/SmoothingLength", data = hsml, dtype = "f4")
+    f.create_dataset("PartData/Errors", data = errors, dtype = "f4")
     f.close()
     
     t1 = time()

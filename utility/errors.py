@@ -10,7 +10,6 @@ import ray
 from time import time
 
 from Parameters.constants import LARGE_NUM, NCPU
-from utility.utility import relative_density_error
 
 ###############################################################################
 #Parallel functions
@@ -21,7 +20,7 @@ def get_errors(Particles):
     err_mean = 0.
     err_sigma = 0.
     for particle in Particles:
-        err        = relative_density_error(particle)
+        err        = abs(particle.Error)
         err_min    = min(err, err_min)
         err_max    = max(err, err_max)
         err_mean  += err
@@ -54,7 +53,7 @@ def compute_l1_error(Particles, Problem):
         err_mean  += err
         err_sigma += err2
     err_mean /= Npart
-    err_sigma = sqrt(err_sigma/Npart - err_mean * err_mean)
+    err_sigma = sqrt((err_sigma/Npart - err_mean * err_mean)/Npart)
     
     t1 = time()
     Problem.Timer["L1-ERROR"] += t1-t0

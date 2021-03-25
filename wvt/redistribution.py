@@ -15,7 +15,6 @@ from Parameters.parameter import NDIM, LastMoveStep, RedistributionFrequency, \
     MoveFractionMin, MoveFractionMax, ProbesFraction
 from sph.sph import find_sph_quantities
 from tree.tree import ngbtree
-from utility.utility import relative_density_error_with_sign
 
 def redistribute(Particles, Problem, density_func, niter):
     "If we have specified this timestep for redistribution redistribute"
@@ -102,11 +101,11 @@ def move_particle_in_neighborhood_of(part_i, part_j, Problem, density_func):
 
 def accept_particle_as_target(particle):
     "Only true if density smaller than model and some luck"
-    return uniform() < -1 * relative_density_error_with_sign(particle)
+    return uniform() < -1 * particle.Error
 
 def accept_particle_for_movement(particle):
     "True with a higher probability for high density particles"
-    return uniform() < erf(relative_density_error_with_sign(particle))
+    return uniform() < erf(particle.Error)
         
 def position_in_proximity_of(particle, Problem, axis):
     "Place particle within 0.3Hsml of the target particle"

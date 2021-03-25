@@ -6,15 +6,14 @@ Created on Sat Feb 27 20:52:12 2021
 @author: leonard
 """
 
-from numpy import zeros, sqrt, linspace, meshgrid, exp, asarray, where
+from numpy import zeros, sqrt, asarray, where
 import ray
-from sys import exit
 from time import time
 
 from data.structures import particle_data
 from Parameters.constants import NCPU
-from Parameters.parameter import NDIM, Problem_Specifier, Nfill, \
-    DistanceThreshold, BlobSizeThreshold, FillThreshold
+from Parameters.parameter import NDIM, Nfill, DistanceThreshold, \
+    BlobSizeThreshold, FillThreshold
 from sph.Kernel import kernel
 from sph.sph import find_sph_quantities
 from tree.tree import ngbtree
@@ -37,6 +36,8 @@ class worker():
         #initialize the bounds of the region occupied by the particle
         #now compute the bounds of our computation
         h  = p.Hsml
+        error = p.Error
+        rho = p.Rho
         pt = p.position * self.FacIntToCoord
         
         bounds = list()
@@ -48,7 +49,7 @@ class worker():
         
         #loop over all bins the particle is occupying
         index = [0 for _ in range(NDIM)]
-        self.nested_sph_loop(0, bounds, pt, h, index)
+        self.nested_sph_loop(0, bounds, pt, h, rho, error, index)
     
     def find_cell_index(self, index):
         for i in range(NDIM):
@@ -59,11 +60,11 @@ class worker():
                     index[i] -= self.Nbins
         return index
 
-    def nested_sph_loop(self, axis, bounds, pt, h, index):
+    def nested_sph_loop(self, axis, bounds, pt, h, rho, error, index):
         if axis < NDIM:
             for i in range(bounds[axis][0], bounds[axis][1]):
                 index[axis] = i
-                self.nested_sph_loop(axis+1, bounds, pt, h, index)
+                self.nested_sph_loop(axis+1, bounds, pt, h, rho, error, index)
         else:
             #get the distance between particle and cell
             ds2 = 0
@@ -79,26 +80,12 @@ class worker():
             index = self.find_cell_index(index)
             
             #now add weight to the cell
-            self.out[tuple(index)[::-1]] += kernel(ds, h)
+            self.out[tuple(index)[::-1]] += kernel(ds, h) * error/rho
     
     def process(self, particles):
         for particle in particles:
             self.update(particle)
-        return self.out  
-
-###############################################################################
-#density functions#############################################################
-
-if Problem_Specifier == "Constant":
-    def rho_model(*args):
-        return 1
-elif Problem_Specifier == "Rayleigh-Taylor":
-    def rho_model(x, y):
-        return 1. + 1. / (1. + exp(- (y - 0.5)/0.025)) 
-else:
-    print("Problem not yet implemented!")
-    ray.shutdown()
-    exit()
+        return self.out
     
 ###############################################################################
 # blob-class ##################################################################
@@ -175,11 +162,10 @@ def close(blob1, blob2, Problem, Nbins):
             return 1
     return 0
                 
-    
 ###############################################################################    
         
 
-def compute_density_map(Particles, Problem, Nbins, dr):
+def compute_error_map(Particles, Problem, Nbins, dr):
     "Project the density on a grid"
     load = Problem.Npart//NCPU
     
@@ -190,13 +176,13 @@ def compute_density_map(Particles, Problem, Nbins, dr):
     pending.append(actors[NCPU-1].process.remote(Particles[(NCPU-1) * load:]))
     
     #now reduce the individual results
-    rho = zeros(tuple(Nbins for _ in range(NDIM)))
+    error_map = zeros(tuple(Nbins for _ in range(NDIM)))
     while len(pending):
         done, pending = ray.wait(pending)
-        rho += ray.get(done[0])
+        error_map += ray.get(done[0])
     
-    rho *= Problem.Mpart
-    return rho
+    error_map *= Problem.Mpart
+    return error_map
 
 def fill_gaps(Particles, Problem, density_func):
     "If we have specified this timestep for gap-filling fill gaps"
@@ -204,15 +190,7 @@ def fill_gaps(Particles, Problem, density_func):
     #first compute the density map
     Nbins = int(Problem.Npart**(1/NDIM))
     dr = Problem.Boxsize/Nbins
-    rho = compute_density_map(Particles, Problem, Nbins, dr)
-    
-    #now compute the relative error field
-    grid = list()
-    for i in range(NDIM):
-        grid.append(linspace(0, Problem.Boxsize[i], Nbins))
-    grid = meshgrid(*grid)
-    
-    error_map = rho/rho_model(*grid) - 1
+    error_map = compute_error_map(Particles, Problem, Nbins, dr)
     
     #First find all underpopulated cells
     cells = list(zip(*where(error_map < FillThreshold)))
@@ -256,7 +234,7 @@ def fill_gaps(Particles, Problem, density_func):
             #spawn particle
             Particles.append(particle_data(Problem.Npart + ninsert))
             Particles[-1].position = convert_to_int_position(position, Problem.FacIntToCoord)
-            Particles[-1].Hsml = position.max()
+            Particles[-1].Hsml = (region.Ncells)**(1/NDIM) * dr
             density_func(Particles[-1])
             ninsert += 1
     

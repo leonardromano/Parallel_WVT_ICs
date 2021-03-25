@@ -28,6 +28,7 @@ class particle_data():
         self.Hsml          = 0
         self.Hwvt          = 0
         self.Rho_Model     = 0
+        self.Error         = 0
 
 
 class problem():

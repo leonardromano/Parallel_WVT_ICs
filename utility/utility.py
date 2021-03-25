@@ -19,12 +19,6 @@ def factorial(n, lowerb = 2):
         result *= i
     return result
 
-def relative_density_error_with_sign(particle):
-    return particle.Rho/particle.Rho_Model - 1
-
-def relative_density_error(particle):
-    return abs(relative_density_error_with_sign(particle))
-
 def norm(vector):
     r = 0
     for component in vector:

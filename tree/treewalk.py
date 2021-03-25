@@ -332,3 +332,4 @@ def finish_density_update(particle, NgbTree):
     if particle.Rho > 0:
         wendland_bias_correction(particle)
         particle.Rho *= NgbTree.Mpart
+        particle.Error = particle.Rho/particle.Rho_Model - 1
