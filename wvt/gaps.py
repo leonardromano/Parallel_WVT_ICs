@@ -241,7 +241,9 @@ def fill_gaps(Particles, Problem, density_func):
     print("Spawned %d particles after trying %d minima."%(ninsert, min(Nfill, len(blobs))))
     
     Particles.sort(key=lambda x: x.Error)
-    Particles.pop()        
+    removed = Particles.pop()        
+    Particles.sort(key=lambda x: x.ID)
+    Particles[-1].ID = removed.ID
     
     print("Removed most overdense particle.")
     
