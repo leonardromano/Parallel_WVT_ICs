@@ -23,7 +23,7 @@ SAVE_WVT_STEPS = True
 #WVT Force & convergence parameter
 ####################################################################
 #inversely proportional to the stepsize of the WVT-"force"
-MpsFraction = 1.
+MpsFraction = 0.5
 #Factor by which the stepsize is decreased whenever it is decreased
 StepReduction = 0.85
 #Convergence limit for large steps
