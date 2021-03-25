@@ -238,12 +238,17 @@ def fill_gaps(Particles, Problem, density_func):
             density_func(Particles[-1])
             ninsert += 1
     
-    #now update the particle mass
-    frac = ninsert/Problem.Npart
-    Problem.Npart += ninsert
-    Problem.Mpart /= (1 + frac)
+    print("Spawned %d particles after trying %d minima."%(ninsert, min(Nfill, len(blobs))))
     
-    print("Spawned %d particles after trying %d minima."%(ninsert, Nfill))
+    Particles.sort(key=lambda x: x.Error)
+    Particles.pop()        
+    
+    print("Removed most overdense particle.")
+    
+    #now update the particle mass
+    frac = (ninsert-1)/Problem.Npart
+    Problem.Npart += (ninsert - 1)
+    Problem.Mpart /= (1 + frac)
     
     t1 = time()
     Problem.Timer["FILL"] += t1-t0
