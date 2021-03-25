@@ -50,9 +50,15 @@ def compute_force(particle, NgbTree, step):
             continue
         r  = norm(dist)
         h  = 0.5 * (particle.Hsml + ngb.Hsml)
+        
+        #compute a weight dependent of the local error
+        #if the neighbor has a lower error the force should be attractive
         err2 = abs(ngb.Error)
         err = 0.5 * (err1 + err2)
         delta_fac = err/(1 + err)
+        if err2 < err1:
+            delta_fac *= -1
+        
         if NDIM == 1:
             wk = log(r/h + 1e-3)
         else:
