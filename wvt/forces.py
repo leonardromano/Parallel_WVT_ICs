@@ -56,7 +56,7 @@ def compute_force(particle, NgbTree, step):
         err2 = abs(ngb.Error)
         err = 0.5 * (err1 + err2)
         delta_fac = err/(1 + err)
-        if err2 < min(err1, 0):
+        if ngb.Error < min(particle.Error, 0):
             delta_fac *= -1
         
         if NDIM == 1:
