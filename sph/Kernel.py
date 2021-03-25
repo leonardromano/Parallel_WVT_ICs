@@ -38,8 +38,8 @@ def wendland_bias_correction(particle):
     epsilon = 0
     if NDIM == 3:
         epsilon = 0.0294 * (DESNNGB * 0.01)**(-0.977)
-    elif NDIM == 2:
-        epsilon = 0.340 * (DESNNGB/16)**(-0.81)
+    #elif NDIM == 2:
+        #epsilon = 0.340 * (DESNNGB/16)**(-0.81)
         
     if epsilon != 0:
         particle.Rho -= epsilon * NORM_FAC * particle.Hsml**(-NDIM)
