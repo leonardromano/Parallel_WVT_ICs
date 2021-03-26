@@ -13,7 +13,7 @@ Created on Sat Jan  2 14:56:12 2021
 #output directory
 output   = "/home/t30/all/ga87reg/Num_seminar/ICs/"  
 #Number of particles
-Npart   = 4000
+Npart   = 1000
 #Name of scheduling system
 Scheduler = "SGE"
 #save a snapshot after each step
@@ -35,7 +35,7 @@ LimitMps100 = -1
 #convergence limit for even smaller steps
 LimitMps1000 = 1
 #Maximum number of iterations
-Maxiter = 256
+Maxiter = 69
 #####################################################################
 
 #Redistribution parameters
@@ -47,7 +47,7 @@ MoveFractionMax = 0.1
 #Which fraction should be probed during redistribution step?
 ProbesFraction  = 0.1
 #How often should we redistribute (e.g. all x iterations)
-RedistributionFrequency = 5
+RedistributionFrequency = 200
 #When should the last redistribution happen?
 LastMoveStep = 150
 #####################################################################
@@ -60,14 +60,16 @@ DistanceThreshold = 1
 BlobSizeThreshold = 5
 #How unpopulated does a region need to be?
 FillThreshold     = -0.2 
+#How populated does a region need to be for killing a particle?
+KillThreshold     = 0.2
 #How many sites should be probed each step?
-Nfill = 10
+Nsample = 10
 #How many particles do we want to have at most?
 MaxNpart = 4450
 #How often should we try to fill gaps (e.g. all x iterations)
-GapFillingFrequency = 11
+GapFillingFrequency = 5
 #When should the last Gapfilling happen?
-LastFillStep = 66
+LastFillStep = 65
 #####################################################################
 
 #Problem related parameters
@@ -75,5 +77,5 @@ LastFillStep = 66
 #Number of dimensions
 NDIM = 2
 # The name of the problem (and of IC-file)
-Problem_Specifier = "Rayleigh-Taylor"
+Problem_Specifier = "constant"
 #####################################################################

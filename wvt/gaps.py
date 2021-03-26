@@ -12,12 +12,12 @@ from time import time
 
 from data.structures import particle_data
 from Parameters.constants import NCPU
-from Parameters.parameter import NDIM, Nfill, DistanceThreshold, \
-    BlobSizeThreshold, FillThreshold
+from Parameters.parameter import NDIM, Nsample, DistanceThreshold, \
+    BlobSizeThreshold, FillThreshold, KillThreshold
 from sph.Kernel import kernel
 from sph.sph import find_sph_quantities
 from tree.tree import ngbtree
-from utility.integer_coordinates import convert_to_int_position
+from utility.integer_coordinates import convert_to_int_position, get_distance_vector
 from utility.utility import norm, volume
 
 ###############################################################################
@@ -161,6 +161,15 @@ def close(blob1, blob2, Problem, Nbins):
         if blob2.close(cell, Problem, Nbins):
             return 1
     return 0
+
+def separated(part_i, particles, Problem):
+    "ckeck if part_i is close to any of the particles"
+    for part_j in particles:
+        dist = norm(get_distance_vector(part_i.position, part_j.position, Problem))
+        if dist < max(part_i.Hsml, part_j.Hsml):
+            return 0
+    return 1
+            
                 
 ###############################################################################    
         
@@ -219,7 +228,7 @@ def fill_gaps(Particles, Problem, density_func):
     blobs.sort(key=lambda x: x.Ncells, reverse=True)
     
     ninsert = 0
-    for region in blobs[:Nfill]:
+    for region in blobs[:Nsample]:
         if region.Ncells >= BlobSizeThreshold:
             position = region.center_of_errormass(error_map, dr)
             #if the underpopulated region is close to a boundary, ignore it
@@ -238,18 +247,36 @@ def fill_gaps(Particles, Problem, density_func):
             density_func(Particles[-1])
             ninsert += 1
     
-    print("Spawned %d particles after trying %d minima."%(ninsert, min(Nfill, len(blobs))))
+    print("Spawned %d particles after trying %d minima."%(ninsert, min(Nsample, len(blobs))))
     
     Particles.sort(key=lambda x: x.Error)
-    removed = Particles.pop()        
-    Particles.sort(key=lambda x: x.ID)
-    Particles[-1].ID = removed.ID
     
-    print("Removed most overdense particle.")
+    #prematurely remove the Nfill densest particles from the list
+    densest = [Particles.pop() for _ in range(Nsample)]
+    
+    #iterate over the dense particles and file all 
+    #overdense and well separated ones for deletion
+    nkill = 0
+    kill = list()
+    for particle in densest:
+        if particle.Error > KillThreshold and separated(particle, kill, Problem):
+            #This one will be killed
+            kill.append(particle)
+            nkill += 1
+        else:
+            #this one is fine so we can return it to Particles
+            Particles.append(particle)
+    
+    #update the particles IDs
+    Particles.sort(key=lambda x: x.ID)
+    for i in range(nkill):
+        Particles[-1-i].ID = kill[i].ID
+    
+    print("Removed %d most overdense particles after probing %d sites."%(nkill, Nsample))
     
     #now update the particle mass
-    frac = (ninsert-1)/Problem.Npart
-    Problem.Npart += (ninsert - 1)
+    frac = (ninsert-nkill)/Problem.Npart
+    Problem.Npart += (ninsert - nkill)
     Problem.Mpart /= (1 + frac)
     
     t1 = time()
