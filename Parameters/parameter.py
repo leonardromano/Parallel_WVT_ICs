@@ -13,7 +13,7 @@ Created on Sat Jan  2 14:56:12 2021
 #output directory
 output   = "/home/t30/all/ga87reg/Num_seminar/ICs/"  
 #Number of particles
-Npart   = 1000
+Npart   = 4000
 #Name of scheduling system
 Scheduler = "SGE"
 #save a snapshot after each step
@@ -35,21 +35,7 @@ LimitMps100 = -1
 #convergence limit for even smaller steps
 LimitMps1000 = 1
 #Maximum number of iterations
-Maxiter = 69
-#####################################################################
-
-#Redistribution parameters
-#####################################################################
-#Which fraction should at least be redistributed?
-MoveFractionMin = 0.001
-#Which fraction should at most be redistributed?
-MoveFractionMax = 0.1
-#Which fraction should be probed during redistribution step?
-ProbesFraction  = 0.1
-#How often should we redistribute (e.g. all x iterations)
-RedistributionFrequency = 200
-#When should the last redistribution happen?
-LastMoveStep = 150
+Maxiter = 156
 #####################################################################
 
 #Gapfilling parameters
@@ -69,7 +55,7 @@ MaxNpart = 4450
 #How often should we try to fill gaps (e.g. all x iterations)
 GapFillingFrequency = 5
 #When should the last Gapfilling happen?
-LastFillStep = 65
+LastFillStep = 40
 #####################################################################
 
 #Problem related parameters
@@ -77,5 +63,5 @@ LastFillStep = 65
 #Number of dimensions
 NDIM = 2
 # The name of the problem (and of IC-file)
-Problem_Specifier = "constant"
+Problem_Specifier = "Rayleigh-Taylor"
 #####################################################################
